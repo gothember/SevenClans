@@ -1,0 +1,39 @@
+name: ClanPlugin
+version: 1.0.0
+main: com.example.clanplugin.ClanPlugin
+api-version: 1.16
+author: Jules
+description: A plugin for clan management.
+softdepend: [Vault]
+commands:
+  clancreate: # This is a temporary name, will be a subcommand of /clan later
+    description: Creates a new clan.
+    usage: "/clancreate <name>"
+    aliases: [ccreate]
+    permission: clanplugin.create # Optional: define permission
+  claninvite:
+    description: Invites a player to your clan.
+    usage: "/claninvite <player>"
+    aliases: [cinvite]
+    permission: clanplugin.invite # Optional
+  clanaccept:
+    description: Accepts a pending clan invitation.
+    usage: "/clanaccept <clanName>"
+    aliases: [caccept]
+    permission: clanplugin.accept # Optional, most plugins allow anyone to accept.
+  clandecline:
+    description: Declines a pending clan invitation.
+    usage: "/clandecline <clanName>"
+    aliases: [cdecline]
+    permission: clanplugin.decline # Optional, usually for everyone
+  clandisband:
+    description: Disbands your current clan (owner only).
+    usage: "/clandisband"
+    aliases: [cdisband]
+    permission: clanplugin.disband
+  clanwithdraw:
+    description: Withdraws funds from the clan treasury (owner only).
+    usage: "/clanwithdraw <amount>"
+    aliases: [cwithdraw]
+    permission: clanplugin.withdraw
+permissions: {} # Will be filled in later

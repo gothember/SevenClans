@@ -1,0 +1,13 @@
+# ClanPlugin Configuration
+clan:
+  name:
+    minLength: 3
+    maxLength: 16
+    # Example: Allow only alphanumeric and underscore
+    # This regex defines characters that are *not* allowed.
+    # So, if a name contains any character matched by this regex, it's invalid.
+    # The default [^a-zA-Z0-9_] means "any character that is NOT a letter, number, or underscore".
+    disallowedRegex: "[^a-zA-Z0-9_]" 
+  creation:
+    minMoney: 1000.0
+  maxMembers: 20 # Maximum number of members a clan can have
