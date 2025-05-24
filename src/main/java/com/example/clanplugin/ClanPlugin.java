@@ -6,7 +6,12 @@ import com.example.clanplugin.commands.ClanInviteCommand; // Already present, en
 import com.example.clanplugin.commands.ClanAcceptCommand;
 import com.example.clanplugin.commands.ClanDeclineCommand;
 import com.example.clanplugin.commands.ClanDisbandCommand;
-import com.example.clanplugin.commands.ClanWithdrawCommand; // Add this import
+import com.example.clanplugin.commands.ClanWithdrawCommand;
+import com.example.clanplugin.commands.ClanInvestCommand;
+import com.example.clanplugin.commands.ClanBalanceCommand;
+import com.example.clanplugin.commands.ClanMembersCommand;
+import com.example.clanplugin.commands.ClanPvpCommand; // Add this import
+import com.example.clanplugin.listeners.PlayerDamageListener; // Add this import
 import com.example.clanplugin.economy.EconomyManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -47,9 +52,25 @@ public class ClanPlugin extends JavaPlugin {
         this.getCommand("clanaccept").setExecutor(new ClanAcceptCommand(this));
         this.getCommand("clandecline").setExecutor(new ClanDeclineCommand(this));
         this.getCommand("clandisband").setExecutor(new ClanDisbandCommand(this));
-        this.getCommand("clanwithdraw").setExecutor(new ClanWithdrawCommand(this)); // Add this line
+        this.getCommand("clanwithdraw").setExecutor(new ClanWithdrawCommand(this));
+        this.getCommand("claninvest").setExecutor(new ClanInvestCommand(this));
+        this.getCommand("clanbalance").setExecutor(new ClanBalanceCommand(this));
+        this.getCommand("clanmembers").setExecutor(new ClanMembersCommand(this));
+        this.getCommand("clanpvp").setExecutor(new ClanPvpCommand(this)); // Add this line
         
-        getLogger().info("ClanPlugin has been enabled, EconomyManager and ClanManager are initialized, commands registered!");
+        // Register listeners
+        getServer().getPluginManager().registerEvents(new PlayerDamageListener(this), this);
+
+        // Start scheduler for checking expired invites
+        long checkInterval = 20L * 60; // Check every 1 minute (20 ticks * 60 seconds)
+        // Consider making this interval configurable in config.yml if desired.
+        getServer().getScheduler().runTaskTimer(this, () -> {
+            if (clanManager != null) {
+                clanManager.checkExpiredInvites();
+            }
+        }, checkInterval, checkInterval); // Initial delay, period
+
+        getLogger().info("ClanPlugin has been enabled, EconomyManager and ClanManager are initialized, commands, listeners, and tasks registered!");
     }
 
     @Override

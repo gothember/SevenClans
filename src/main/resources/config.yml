@@ -1,13 +1,66 @@
 # ClanPlugin Configuration
+
+# Clan settings
 clan:
-  name:
-    minLength: 3
-    maxLength: 16
-    # Example: Allow only alphanumeric and underscore
-    # This regex defines characters that are *not* allowed.
-    # So, if a name contains any character matched by this regex, it's invalid.
-    # The default [^a-zA-Z0-9_] means "any character that is NOT a letter, number, or underscore".
-    disallowedRegex: "[^a-zA-Z0-9_]" 
+  # Maximum number of members a clan can have.
+  maxMembers: 20
+  
+  # Settings related to clan creation
   creation:
+    # The amount of money required to create a new clan.
+    # Requires Vault and an economy plugin.
     minMoney: 1000.0
-  maxMembers: 20 # Maximum number of members a clan can have
+    
+  # Settings for clan names
+  name:
+    # Minimum length for a clan name.
+    minLength: 3
+    # Maximum length for a clan name.
+    maxLength: 16
+    # Regex to define disallowed characters in a clan name. 
+    # The default allows alphanumeric characters and underscores.
+    # Example: To allow only letters: "[^a-zA-Z]"
+    disallowedRegex: "[^a-zA-Z0-9_]"
+    # If true, clan tags will automatically be generated from the first 'tagLength' characters of the clan name.
+    # Set to false if you want to implement a separate /clan tag command or manage tags differently.
+    autoGenerateTag: true
+    # Default length for auto-generated clan tags.
+    tagLength: 5
+
+# Message configuration
+# You can use standard Bukkit color codes (&c, &l, etc.) and HEX color codes (e.g., &#RRGGBB).
+# HEX codes require a Paper/Spigot 1.16+ server.
+messages:
+  prefix: "&#008080[ClanPlugin] &r" # Example prefix with a HEX color
+
+  clanCreated: "&#00FF00Clan '&{clanName}&#00FF00' created successfully!"
+  clanDisbanded: "&#FF0000Your clan '&{clanName}&#FF0000' has been disbanded."
+  playerJoinedClan: "&#00FF00{playerName} has joined your clan!"
+  playerLeftClan: "&#FFFF00{playerName} has left your clan." # Example for a future /clan leave command
+  inviteSent: "&#00FFFFInvitation sent to {targetPlayerName}."
+  inviteReceived: "&#00FFFFYou have received an invitation to join clan '&{clanName}&#00FFFF' from {inviterName}."
+  # Add more messages as needed for other command outputs or notifications.
+  # Example: error messages
+  error:
+    noPermission: "&cYou do not have permission to do that."
+    playerOnlyCommand: "&cThis command can only be run by a player."
+    clanOnlyCommand: "&cYou must be in a clan to use this command."
+    notClanOwner: "&cOnly the clan owner can perform this action."
+    clanFull: "&cThe clan is full."
+    alreadyInClan: "&cYou are already in a clan."
+    targetAlreadyInClan: "&c{targetPlayerName} is already in another clan."
+    pvpDisabledInternally: "&cFriendly fire is disabled in your clan." # For attacker
+    
+  clanPvpStatus: "&aClan friendly fire (PVP) is now {status}."
+  # Status words for PVP command, can be customized (e.g., to other languages)
+  statusWords:
+    enabled: "ENABLED"
+    disabled: "DISABLED"
+  inviteExpiredForInvited: "&cYour clan invitation from '{clanName}' has expired."
+  inviteExpiredForInviter: "&eThe invitation sent to {playerName} for your clan '{clanName}' has expired."
+
+# Settings for pending invitations
+invitations:
+  # Duration in seconds for how long a clan invitation remains valid.
+  # Set to 0 to disable expiration.
+  expireAfterSeconds: 300 # 5 minutes

@@ -36,4 +36,24 @@ commands:
     usage: "/clanwithdraw <amount>"
     aliases: [cwithdraw]
     permission: clanplugin.withdraw
+  claninvest:
+    description: Invests your money into the clan treasury.
+    usage: "/claninvest <amount>"
+    aliases: [cinvest]
+    permission: clanplugin.invest 
+  clanbalance:
+    description: Displays your clan's treasury balance.
+    usage: "/clanbalance"
+    aliases: [cbal]
+    permission: clanplugin.balance 
+  clanmembers:
+    description: Lists members of your current clan.
+    usage: "/clanmembers"
+    aliases: [cmembers, clist]
+    permission: clanplugin.members
+  clanpvp:
+    description: Toggles friendly fire (PVP) within your clan.
+    usage: "/clanpvp"
+    aliases: [cpvp]
+    permission: clanplugin.pvp 
 permissions: {} # Will be filled in later

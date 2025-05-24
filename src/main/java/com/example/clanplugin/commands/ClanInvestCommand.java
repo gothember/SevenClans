@@ -11,12 +11,12 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class ClanWithdrawCommand implements CommandExecutor {
+public class ClanInvestCommand implements CommandExecutor {
 
     private final ClanManager clanManager;
-    // EconomyManager is static, can be called directly
+    // EconomyManager is static
 
-    public ClanWithdrawCommand(ClanPlugin plugin) {
+    public ClanInvestCommand(ClanPlugin plugin) {
         this.clanManager = ClanPlugin.getClanManager();
     }
 
@@ -35,13 +35,8 @@ public class ClanWithdrawCommand implements CommandExecutor {
             return true;
         }
 
-        if (!clan.isOwner(player.getUniqueId())) {
-            player.sendMessage(ColorUtils.getConfigMessage("messages.error.notClanOwner", "&cOnly the clan owner can perform this action.")); // Or a specific "cannotWithdraw" message
-            return true;
-        }
-
         if (args.length == 0) {
-            player.sendMessage(ColorUtils.translateColorCodes("&cUsage: /clanwithdraw <amount>")); // Or get from plugin.yml
+            player.sendMessage(ColorUtils.translateColorCodes("&cUsage: /claninvest <amount>")); // Or get from plugin.yml
             return false;
         }
 
@@ -58,26 +53,26 @@ public class ClanWithdrawCommand implements CommandExecutor {
             return true;
         }
 
-        if (clan.getBalance() < amount) {
-            String notEnoughFundsMsg = ColorUtils.getConfigMessage("messages.error.clanNotEnoughFunds", "&cThe clan does not have enough funds. Balance: {balance}")
-                .replace("{balance}", EconomyManager.format(clan.getBalance()));
-            player.sendMessage(notEnoughFundsMsg);
+        if (!EconomyManager.hasEnough(player, amount)) {
+            String notEnoughPlayerMsg = ColorUtils.getConfigMessage("messages.error.playerNotEnoughMoney", "&cYou do not have enough money. Your balance: {balance}")
+                .replace("{balance}", EconomyManager.format(EconomyManager.getEconomy().getBalance(player)));
+            player.sendMessage(notEnoughPlayerMsg);
             return true;
         }
 
-        if (EconomyManager.depositMoney(player, amount)) {
-            clan.setBalance(clan.getBalance() - amount);
+        if (EconomyManager.withdrawMoney(player, amount)) {
+            clan.setBalance(clan.getBalance() + amount);
             clanManager.saveClans();
             
-            String withdrawSuccessMsg = ColorUtils.getConfigMessage("messages.withdrawSuccess", "&aSuccessfully withdrew {amount} from the clan treasury.")
+            String investSuccessMsg = ColorUtils.getConfigMessage("messages.investSuccess", "&aSuccessfully invested {amount} into the clan treasury.")
                 .replace("{amount}", EconomyManager.format(amount));
-            player.sendMessage(withdrawSuccessMsg);
-            
+            player.sendMessage(investSuccessMsg);
+
             String newBalanceMsg = ColorUtils.getConfigMessage("messages.newClanBalance", "&aNew clan balance: {balance}")
                 .replace("{balance}", EconomyManager.format(clan.getBalance()));
             player.sendMessage(newBalanceMsg);
         } else {
-            player.sendMessage(ColorUtils.getConfigMessage("messages.error.economyError", "&cFailed to transfer funds to your account. Please try again."));
+            player.sendMessage(ColorUtils.getConfigMessage("messages.error.economyError", "&cFailed to withdraw funds from your account. Please try again."));
         }
 
         return true;

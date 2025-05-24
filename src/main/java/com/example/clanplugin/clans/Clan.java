@@ -12,6 +12,7 @@ public class Clan {
     private Set<UUID> members;
     private double balance;
     private String tag; // Optional: A short tag for the clan
+    private boolean friendlyFireAllowed = false; // Added for PVP
 
     public Clan(String name, UUID owner) {
         this.name = name;
@@ -65,5 +66,14 @@ public class Clan {
 
     public String getOwnerUUIDAsString() {
         return owner.toString();
+    }
+
+    // Getter and Setter for friendlyFireAllowed
+    public boolean isFriendlyFireAllowed() {
+        return friendlyFireAllowed;
+    }
+
+    public void setFriendlyFireAllowed(boolean friendlyFireAllowed) {
+        this.friendlyFireAllowed = friendlyFireAllowed;
     }
 }

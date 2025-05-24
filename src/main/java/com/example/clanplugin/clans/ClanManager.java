@@ -102,6 +102,7 @@ public class ClanManager {
             Clan clan = new Clan(clanName, owner); // Clan name from key, not stored name field
             clan.setBalance(clansConfig.getDouble(path + ".balance", 0.0));
             clan.setTag(clansConfig.getString(path + ".tag", clanName.length() > 5 ? clanName.substring(0,5) : clanName));
+            clan.setFriendlyFireAllowed(clansConfig.getBoolean(path + ".friendlyFireAllowed", false)); // Added
             
             List<String> memberUUIDs = clansConfig.getStringList(path + ".members");
             for (String uuidStr : memberUUIDs) {
@@ -130,6 +131,7 @@ public class ClanManager {
             clansConfig.set(path + ".members", clan.getMemberUUIDsAsString());
             clansConfig.set(path + ".balance", clan.getBalance());
             clansConfig.set(path + ".tag", clan.getTag());
+            clansConfig.set(path + ".friendlyFireAllowed", clan.isFriendlyFireAllowed()); // Added
         }
         try {
             clansConfig.save(clansFile);
@@ -144,7 +146,7 @@ public class ClanManager {
 
     // Add near other map declarations
     private final Map<UUID, String> pendingInvites = new HashMap<>(); // Invited Player UUID -> Clan Name
-    // private final Map<String, Long> inviteTimestamps = new HashMap<>(); // Clan Name_Player UUID -> Timestamp (for expiration) - OPTIONAL for now
+    private final Map<UUID, Long> inviteTimestamps = new HashMap<>(); // Invited Player UUID -> Timestamp of invite
 
     // Method to add an invite
     // Returns false if player already has an invite or other issues
@@ -158,35 +160,85 @@ public class ClanManager {
         if (clan == null) return false; // Should not happen if called correctly
 
         pendingInvites.put(invitedPlayerUUID, clan.getName());
-        // Optional: Add timestamp for expiration
-        // inviteTimestamps.put(clanName.toLowerCase() + "_" + invitedPlayerUUID.toString(), System.currentTimeMillis());
+        inviteTimestamps.put(invitedPlayerUUID, System.currentTimeMillis()); // Store timestamp
         plugin.getLogger().info("Invitation created for " + invitedPlayerUUID + " to join " + clanName);
         return true;
     }
 
     // Method to get a pending invite for a player
     public String getInvite(UUID invitedPlayerUUID) {
-        // Optional: Check for expiration here
-        // String key = pendingInvites.get(invitedPlayerUUID).toLowerCase() + "_" + invitedPlayerUUID.toString();
-        // if (inviteTimestamps.containsKey(key) && System.currentTimeMillis() - inviteTimestamps.get(key) > INVITE_TIMEOUT_MS) {
-        //    removeInvite(invitedPlayerUUID); // Clean up expired invite
-        //    return null;
-        // }
+        long expireAfterMillis = com.example.clanplugin.ClanPlugin.getInstance().getConfig().getLong("invitations.expireAfterSeconds", 300) * 1000;
+        
+        if (expireAfterMillis > 0) { // 0 means never expires
+            Long creationTime = inviteTimestamps.get(invitedPlayerUUID);
+            if (creationTime != null && (System.currentTimeMillis() - creationTime > expireAfterMillis)) {
+                String clanName = pendingInvites.get(invitedPlayerUUID); // Get clan name for logging/notification before removing
+                removeInvite(invitedPlayerUUID); // This removes from both maps
+                plugin.getLogger().info("Expired invite for " + invitedPlayerUUID + " to clan " + clanName + " was accessed and removed.");
+                // Notifications for this specific access case can be added here or rely on checkExpiredInvites
+                return null; // Invite is expired
+            }
+        }
         return pendingInvites.get(invitedPlayerUUID);
     }
 
     // Method to remove an invite (after accept/decline or expiration)
     public boolean removeInvite(UUID invitedPlayerUUID) {
+        inviteTimestamps.remove(invitedPlayerUUID); // Remove timestamp
         String clanName = pendingInvites.remove(invitedPlayerUUID);
         if (clanName != null) {
-            // Optional: remove from timestamp map
-            // inviteTimestamps.remove(clanName.toLowerCase() + "_" + invitedPlayerUUID.toString());
             plugin.getLogger().info("Invitation removed for " + invitedPlayerUUID + " from clan " + clanName);
             return true;
         }
         return false;
     }
     
+    // Method to periodically check and clean up expired invites
+    public void checkExpiredInvites() {
+        long expireAfterMillis = com.example.clanplugin.ClanPlugin.getInstance().getConfig().getLong("invitations.expireAfterSeconds", 300) * 1000;
+        if (expireAfterMillis <= 0) { // Expiry is disabled
+            return;
+        }
+
+        // Iterate over a copy of keys to avoid ConcurrentModificationException while removing
+        for (UUID invitedPlayerUUID : new java.util.HashSet<>(pendingInvites.keySet())) { 
+            Long creationTime = inviteTimestamps.get(invitedPlayerUUID);
+            if (creationTime == null) { // Should not happen if data is consistent
+                pendingInvites.remove(invitedPlayerUUID); // Clean up inconsistent entry
+                continue;
+            }
+
+            if ((System.currentTimeMillis() - creationTime) > expireAfterMillis) {
+                String clanName = pendingInvites.get(invitedPlayerUUID); // Get clan name before removing invite
+                removeInvite(invitedPlayerUUID); // This removes from both maps
+
+                org.bukkit.entity.Player invitedPlayer = Bukkit.getPlayer(invitedPlayerUUID);
+                if (invitedPlayer != null && invitedPlayer.isOnline()) {
+                    String msg = com.example.clanplugin.utils.ColorUtils.getConfigMessage("messages.inviteExpiredForInvited", "&cYour clan invitation from '{clanName}' has expired.")
+                                           .replace("{clanName}", clanName == null ? "a clan" : clanName);
+                    invitedPlayer.sendMessage(msg);
+                }
+
+                if (clanName != null) {
+                    Clan clan = getClan(clanName);
+                    if (clan != null) {
+                        org.bukkit.entity.Player clanOwner = Bukkit.getPlayer(clan.getOwner());
+                        if (clanOwner != null && clanOwner.isOnline()) {
+                            org.bukkit.OfflinePlayer offlineInvitedPlayer = Bukkit.getOfflinePlayer(invitedPlayerUUID);
+                            String invitedPlayerName = offlineInvitedPlayer.getName() != null ? offlineInvitedPlayer.getName() : invitedPlayerUUID.toString();
+                            
+                            String msg = com.example.clanplugin.utils.ColorUtils.getConfigMessage("messages.inviteExpiredForInviter", "&eThe invitation sent to '{playerName}' for your clan '{clanName}' has expired.")
+                                                   .replace("{playerName}", invitedPlayerName)
+                                                   .replace("{clanName}", clanName);
+                            clanOwner.sendMessage(msg);
+                        }
+                    }
+                }
+                plugin.getLogger().info("Expired and removed clan invitation for player " + invitedPlayerUUID + " from clan " + clanName);
+            }
+        }
+    }
+        
     // Modify addPlayerToClan to use/remove invites
     // public boolean addPlayerToClan(Clan clan, UUID playerUuid) { // Old signature, if it was public before
     public boolean addPlayerToClan(Clan clan, UUID playerUuid) { // Assuming it's part of an interface or needs to be public
